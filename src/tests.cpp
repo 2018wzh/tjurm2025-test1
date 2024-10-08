@@ -1,29 +1,38 @@
 #include "tests.h"
-
-// 练习1，实现库函数strlen
-int my_strlen(char *str) {
+// #include <iostream>
+// using namespace std;
+//  练习1，实现库函数strlen
+int my_strlen(char *str)
+{
     /**
      * 统计字符串的长度，太简单了。
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    int length = 0;
+    while (str[length] != '\0')
+        length++;
+    return length;
 }
 
-
 // 练习2，实现库函数strcat
-void my_strcat(char *str_1, char *str_2) {
+void my_strcat(char *str_1, char *str_2)
+{
     /**
      * 将字符串str_2拼接到str_1之后，我们保证str_1指向的内存空间足够用于添加str_2。
      * 注意结束符'\0'的处理。
      */
 
     // IMPLEMENT YOUR CODE HERE
+    int i = my_strlen(str_1), j = my_strlen(str_2);
+    for (int k = 0; k < j; k++)
+        str_1[i + k] = str_2[k];
+    str_1[i + j] = '\0';
 }
 
-
 // 练习3，实现库函数strstr
-char* my_strstr(char *s, char *p) {
+char *my_strstr(char *s, char *p)
+{
     /**
      * 在字符串s中搜索字符串p，如果存在就返回第一次找到的地址，不存在就返回空指针(0)。
      * 例如：
@@ -31,9 +40,18 @@ char* my_strstr(char *s, char *p) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    if (*p == '\0')
+        return s;
+    for (char *s1 = s; *s1 != '\0'; s1++)
+    {
+        char *p1 = p, *s2 = s1;
+        while (*s2 != '\0' && *p1 != '\0' && *s2 == *p1)
+            s2++, p1++;
+        if (*p1 == '\0')
+            return s1;
+    }
     return 0;
 }
-
 
 /**
  * ================================= 背景知识 ==================================
@@ -72,10 +90,13 @@ char* my_strstr(char *s, char *p) {
  *
  *   理解了图片的存储之后，再开始编写代码。
  */
-
-
+int convert(int x, int y, int h, int w)
+{
+    return x + y * w;
+}
 // 练习4，将彩色图片(rgb)转化为灰度图片
-void rgb2gray(float *in, float *out, int h, int w) {
+void rgb2gray(float *in, float *out, int h, int w)
+{
     /**
      * 编写这个函数，将一张彩色图片转化为灰度图片。以下是各个参数的含义：
      * (1) float *in:  指向彩色图片对应的内存区域（或者说数组）首地址的指针。
@@ -97,10 +118,16 @@ void rgb2gray(float *in, float *out, int h, int w) {
 
     // IMPLEMENT YOUR CODE HERE
     // ...
+    for (int i = 0; i < w; i++)
+        for (int j = 0; j < h; j++)
+        {
+            int pos = convert(i, j, h, w);
+            out[pos] = 0.2989 * in[pos * 3] + 0.5870 * in[pos * 3 + 1] + 0.1140 * in[pos * 3 + 2];
+        }
 }
-
 // 练习5，实现图像处理算法 resize：缩小或放大图像
-void resize(float *in, float *out, int h, int w, int c, float scale) {
+void resize(float *in, float *out, int h, int w, int c, float scale)
+{
     /**
      * 图像处理知识：
      *  1.单线性插值法
@@ -198,12 +225,23 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
 
     int new_h = h * scale, new_w = w * scale;
     // IMPLEMENT YOUR CODE HERE
+    for (int x = 0; x < new_h; x++)
+        for (int y = 0; y < new_w; y++)
+        {
+            float x0 = x / scale, y0 = y / scale;
+            int x1 = static_cast<int>(x0), y1 = static_cast<int>(y0);
+            int x2 = (x1 == h - 1 ? x1 : x1 + 1), y2 = (y1 == w - 1 ? y1 : y1 + 1);
 
+            float p1 = in[convert(x1, y1, h, w)], p2 = in[convert(x1, y2, h, w)], p3 = in[convert(x2, y1, h, w)], p4 = in[convert(x2, y2, h, w)];
+            float dx = x - x1, dy = y - y1;
+
+            out[convert(x, y, new_h, new_w)] = p1 * (1 - dx) * (1 - dy) + p2 * dx * (1 - dy) + p3 * (1 - dx) * dy + p4 * dx * dy;
+        }
 }
 
-
 // 练习6，实现图像处理算法：直方图均衡化
-void hist_eq(float *in, int h, int w) {
+void hist_eq(float *in, int h, int w)
+{
     /**
      * 将输入图片进行直方图均衡化处理。参数含义：
      * (1) float *in: 输入的灰度图片。
@@ -221,4 +259,17 @@ void hist_eq(float *in, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    int hist[256] = {0};
+    float cdf[256] = {0};
+    float map[256];
+    int pixels = h * w;
+    for (int i = 0; i < pixels; i++)
+        hist[int(in[i])]++;
+    cdf[0] = hist[0];
+    for (int i = 1; i < 256; i++)
+        cdf[i] = cdf[i - 1] + hist[i];
+    for (int i = 0; i < 256; i++)
+        map[i] = cdf[i] / pixels * 255.0f;
+    for (int i = 0; i < pixels; i++)
+        in[i] = map[int(in[i])];
 }
